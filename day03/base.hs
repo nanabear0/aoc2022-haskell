@@ -1,39 +1,39 @@
-import System.IO (readFile)
-import Data.List (intersect, nub)
 import Data.Char (isUpper)
+import Data.List (intersect, nub)
+import System.IO (readFile)
 
 -- shared
 toPriority :: Char -> Int
 toPriority x = fromEnum x - lowerBase
-    where lowerBase = if isUpper x then fromEnum 'A' - 27 else fromEnum 'a' - 1
+  where
+    lowerBase = if isUpper x then fromEnum 'A' - 27 else fromEnum 'a' - 1
 
 allItemsToPriority :: [Char] -> Int
-allItemsToPriority x = sum $ map toPriority x
+allItemsToPriority = sum . map toPriority
 
 -- part1
 itemsInBothCompartments :: Eq a => ([a], [a]) -> [a]
 itemsInBothCompartments (x, y) = nub x `intersect` y
 
 splitToRucksacks :: String -> [([Char], [Char])]
-splitToRucksacks x = map (\y -> splitAt (length y `div` 2) y) $ lines x
+splitToRucksacks = map (\y -> splitAt (length y `div` 2) y) . lines
 
 part1 :: String -> Int
-part1 x = sum $ map (allItemsToPriority . itemsInBothCompartments) $ splitToRucksacks x
+part1 = sum . map (allItemsToPriority . itemsInBothCompartments) . splitToRucksacks
 
 -- part2
 itemsInAllElves :: Eq a => ([a], [a], [a]) -> [a]
-itemsInAllElves (x,y,z) = nub x `intersect` y `intersect` z
+itemsInAllElves (x, y, z) = nub x `intersect` y `intersect` z
 
 toElfGroups' :: [String] -> [(String, String, String)]
 toElfGroups' [] = []
-toElfGroups' (x:y:z:xs) = (x,y,z) : toElfGroups' xs
+toElfGroups' (x : y : z : xs) = (x, y, z) : toElfGroups' xs
 
 toElfGroups :: String -> [(String, String, String)]
-toElfGroups x = toElfGroups' $ lines x
+toElfGroups = toElfGroups' . lines
 
 part2 :: String -> Int
-part2 x = sum $ map (allItemsToPriority . itemsInAllElves) $ toElfGroups x
-
+part2 = sum . map (allItemsToPriority . itemsInAllElves) . toElfGroups
 
 main = do
   contents <- readFile "input.txt"

@@ -5,7 +5,7 @@ import System.IO (readFile)
 
 groupByElves' :: [String] -> [[Int]]
 groupByElves' [] = []
-groupByElves' x = map read (take splitPoint x) : groupByElves' (drop (splitPoint + 1) x)
+groupByElves' x = (map read . take splitPoint) x : (groupByElves' . drop (splitPoint + 1)) x
   where
     splitPoint = fromMaybe (length x) (elemIndex "" x)
 
@@ -13,10 +13,10 @@ groupByElves :: String -> [[Int]]
 groupByElves = groupByElves' . lines
 
 findBiggestElf :: String -> Int
-findBiggestElf x = maximum $ map sum (groupByElves x)
+findBiggestElf = maximum . map sum . groupByElves
 
 findNBiggestElves :: Int -> String -> Int
-findNBiggestElves n list = sum $ take n $ reverse $ sort $ map sum $ groupByElves list
+findNBiggestElves n = sum . take n . reverse . sort . map sum . groupByElves
 
 part1 = findBiggestElf
 

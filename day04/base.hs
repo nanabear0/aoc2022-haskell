@@ -27,13 +27,13 @@ rangesOverlap :: ((Integer, Integer), (Integer, Integer)) -> Bool
 rangesOverlap ((l0, h0), (l1, h1)) = h0 >= l1 && h1 >= l0
 
 contentsToRangeTuples :: String -> [((Integer, Integer), (Integer, Integer))]
-contentsToRangeTuples x = map (toRangesPair . splitToRanges) (lines x)
+contentsToRangeTuples = map (toRangesPair . splitToRanges) . lines
 
 part1 :: String -> Int
-part1 x = length $ filter rangeFullyContainsOther (contentsToRangeTuples x)
+part1 = length . filter rangeFullyContainsOther . contentsToRangeTuples
 
 part2 :: String -> Int
-part2 x = length $ filter rangesOverlap (contentsToRangeTuples x)
+part2 = length . filter rangesOverlap . contentsToRangeTuples
 
 main = do
   contents <- readFile "input.txt"
