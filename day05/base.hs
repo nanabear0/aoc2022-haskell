@@ -3,14 +3,14 @@ import Data.List (elemIndex, transpose, unfoldr)
 import Data.Maybe (fromMaybe)
 import System.IO (readFile)
 
-replace2 :: [String] -> Int -> Int -> String -> String -> [String]
-replace2 [] _ _ _ _ = []
-replace2 (ns : state) 0 y nx ny = nx : replace2 state (-1) (y - 1) nx ny
-replace2 (ns : state) x 0 nx ny = ny : replace2 state (x - 1) (-1) nx ny
-replace2 (ns : state) x y nx ny = ns : replace2 state (x - 1) (y - 1) nx ny
+swap2 :: [String] -> Int -> Int -> String -> String -> [String]
+swap2 [] _ _ _ _ = []
+swap2 (ns : state) 0 y nx ny = nx : swap2 state (-1) (y - 1) nx ny
+swap2 (ns : state) x 0 nx ny = ny : swap2 state (x - 1) (-1) nx ny
+swap2 (ns : state) x y nx ny = ns : swap2 state (x - 1) (y - 1) nx ny
 
 updateState :: Bool -> [String] -> Int -> Int -> Int -> [String]
-updateState insertInReverse state n s t = replace2 state (s - 1) (t - 1) newSource newTarget
+updateState insertInReverse state n s t = swap2 state (s - 1) (t - 1) newSource newTarget
   where
     sourceStack = state !! (s - 1)
     targetStack = state !! (t - 1)
