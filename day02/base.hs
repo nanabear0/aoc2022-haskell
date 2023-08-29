@@ -1,4 +1,4 @@
-import System.IO (IOMode (ReadMode), hClose, hGetContents, openFile)
+import System.IO (readFile)
 
 convertToRPCTuple :: String -> [(Int, Int)]
 convertToRPCTuple x =
@@ -20,8 +20,6 @@ part2 :: String -> Int
 part2 x = sum $ map predictMatchScore $ convertToRPCTuple x
 
 main = do
-  handle <- openFile "input.txt" ReadMode
-  contents <- hGetContents handle
+  contents <- readFile "input.txt"
   putStrLn $ "part1: " ++ show (part1 contents)
   putStrLn $ "part2: " ++ show (part2 contents)
-  hClose handle

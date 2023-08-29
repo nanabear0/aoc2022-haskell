@@ -1,6 +1,6 @@
 import Data.List (elemIndex)
 import Data.Maybe (fromMaybe)
-import System.IO (IOMode (ReadMode), hClose, hGetContents, openFile)
+import System.IO (readFile)
 
 toRangeNumTuple :: (String, String) -> (Integer, Integer)
 toRangeNumTuple (x, y) = (read x :: Integer, read $ tail y :: Integer)
@@ -36,8 +36,6 @@ part2 :: String -> Int
 part2 x = length $ filter rangesOverlap (contentsToRangeTuples x)
 
 main = do
-  handle <- openFile "input.txt" ReadMode
-  contents <- hGetContents handle
+  contents <- readFile "input.txt"
   putStrLn $ "part1: " ++ show (part1 contents)
   putStrLn $ "part2: " ++ show (part2 contents)
-  hClose handle

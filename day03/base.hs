@@ -1,4 +1,4 @@
-import System.IO (IOMode (ReadMode), hClose, hGetContents, openFile)
+import System.IO (readFile)
 import Data.List (intersect, nub)
 import Data.Char (isUpper)
 
@@ -36,8 +36,6 @@ part2 x = sum $ map (allItemsToPriority . itemsInAllElves) $ toElfGroups x
 
 
 main = do
-  handle <- openFile "input.txt" ReadMode
-  contents <- hGetContents handle
+  contents <- readFile "input.txt"
   putStrLn $ "part1: " ++ show (part1 contents)
   putStrLn $ "part2: " ++ show (part2 contents)
-  hClose handle
