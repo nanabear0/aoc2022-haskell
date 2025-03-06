@@ -43,10 +43,8 @@ parse (('d' : 'i' : 'r' : ' ' : folder) : operations) (currentFolder, crumbs) = 
 parse (fileInfo : operations) (currentFolder, crumbs) = parse operations (fsChildFile fileInfo currentFolder, crumbs)
 
 getSize :: (Int->Bool) -> FSItem -> (Int, [Int])
-getSize comprarator (Folder name children) = (value, srr)
+getSize comprarator (Folder name children) = (value, if comprarator value then value:descendants else descendants)
   where (value, descendants) = foldr ((\(sacc, lacc) (s, l) -> (sacc+s, l++lacc )) . getSize comprarator) (0, []) children
-        doInclude = comprarator value
-        srr = if doInclude then value:descendants else descendants
 getSize _ (File name size)  = (size, [])
 
 part1 :: FSItem -> Int
