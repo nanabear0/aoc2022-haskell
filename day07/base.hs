@@ -50,10 +50,10 @@ getSize comprarator (Folder name children) = (value, srr)
 getSize _ (File name size)  = (size, [])
 
 part1 :: FSItem -> Int
-part1 tree = sum . snd $ getSize (<100000) tree 
+part1 tree = sum . snd $ getSize (<100000) tree
 
 part2 :: FSItem -> Int
-part2 tree = head . dropWhile (\size -> 70000000 - totalSize + size <= 30000000) . sort $ folders
+part2 tree = minimum . filter (\size -> 70000000 - totalSize + size >= 30000000) $ folders
   where (totalSize, folders) = getSize (const True) tree
 
 main = do
