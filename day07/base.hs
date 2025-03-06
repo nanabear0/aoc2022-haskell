@@ -1,10 +1,15 @@
-import Data.List (break)
+import Data.List (break, sort)
+import Data.Bits (toIntegralSized)
 
 type Name = String
-type Data = Int
-data FSItem = File Name Data | Folder Name [FSItem] deriving (Show)
+type Size = Int
+data FSItem = File Name Size | Folder Name [FSItem] deriving (Show)
 data FSCrumb = FSCrumb Name [FSItem] [FSItem] deriving (Show)
 type FSZipper = (FSItem, [FSCrumb])
+
+fsTop :: FSZipper -> FSZipper
+fsTop (item, []) = (item, [])
+fsTop zipper = fsTop . fsUp $ zipper
 
 fsUp :: FSZipper -> FSZipper
 fsUp (item, []) = (item, [])
@@ -37,23 +42,22 @@ parse (('$' : ' ' : 'c' : 'd' : ' ' : folder) : operations) zipper = parse opera
 parse (('d' : 'i' : 'r' : ' ' : folder) : operations) (currentFolder, crumbs) = parse operations (fsChildFolder folder currentFolder, crumbs)
 parse (fileInfo : operations) (currentFolder, crumbs) = parse operations (fsChildFile fileInfo currentFolder, crumbs)
 
-getSize :: FSItem -> (Int, [Int])
-getSize (Folder name children) = (fr, srr)
-  where (fr, sr) = foldr ((\(sacc, lacc) (s, l) -> (sacc+s, l++lacc )) . getSize) (0, []) children
-        isSizeEnough = fr < 100000
-        srr = if isSizeEnough then fr:sr else sr
-getSize (File name size) = (size, [])
-
-tree = do
-  contents <- readFile "input.txt"
-  let ls = lines contents
-  let tree = fst $ fsUp . fsUp . fsUp $ parse ls (undefined,[])
-  return tree
+getSize :: (Int->Bool) -> FSItem -> (Int, [Int])
+getSize comprarator (Folder name children) = (value, srr)
+  where (value, descendants) = foldr ((\(sacc, lacc) (s, l) -> (sacc+s, l++lacc )) . getSize comprarator) (0, []) children
+        doInclude = comprarator value
+        srr = if doInclude then value:descendants else descendants
+getSize _ (File name size)  = (size, [])
 
 part1 :: FSItem -> Int
-part1 tree = sum . snd $ getSize tree
+part1 tree = sum . snd $ getSize (<100000) tree 
+
+part2 :: FSItem -> Int
+part2 tree = head . dropWhile (\size -> 70000000 - totalSize + size <= 30000000) . sort $ folders
+  where (totalSize, folders) = getSize (const True) tree
+
 main = do
   contents <- readFile "input.txt"
-  let ls = lines contents
-  let tree = fst $ fsUp . fsUp . fsUp $ parse ls (undefined,[])
+  let tree = fst . fsTop $ parse (lines contents) (undefined,[])
   print $ "part1: " ++ show (part1 tree)
+  print $ "part2: " ++ show (part2 tree)
