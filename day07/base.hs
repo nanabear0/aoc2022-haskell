@@ -1,50 +1,59 @@
-import Data.List (break, nub)
-import Data.Map qualified as Map
-import Data.Maybe (mapMaybe, fromMaybe)
-import Data.Set qualified as Set
-import Debug.Trace (trace)
+import Data.List (break)
 
-createParentsAndSizes :: String -> [String] -> (Map.Map String String, Map.Map String Int) -> (Map.Map String String, Map.Map String Int)
-createParentsAndSizes _ [] (parents, sizes) =
-  (parents, sizes)
-createParentsAndSizes folder ("$ cd .." : commands) (parents, sizes) =
-  createParentsAndSizes (fromMaybe "/" $ Map.lookup folder parents) commands (parents, sizes)
-createParentsAndSizes folder (('$' : ' ' : 'c' : 'd' : ' ' : targetFolder) : commands) (parents, sizes) =
-  createParentsAndSizes targetFolder commands (parents, sizes)
-createParentsAndSizes folder ("$ ls" : commands) (parents, sizes) =
-  createParentsAndSizes folder commands (parents, sizes)
-createParentsAndSizes folder (('d' : 'i' : 'r' : ' ' : childFolderName) : commands) (parents, sizes) =
-  createParentsAndSizes folder commands (Map.insert childFolderName folder parents, Map.insert childFolderName 0 sizes)
-createParentsAndSizes folder (fileInfo : commands) (parents, sizes) =
-  createParentsAndSizes folder commands (newParents, newSizes)
-  where
-    (fileSizeAsString, ' ' : fileName) = break (== ' ') fileInfo
-    fileSize = read fileSizeAsString :: Int
-    newParents = Map.insert fileName folder parents
-    newSizes = Map.insert fileName fileSize sizes
+type Name = String
+type Data = Int
+data FSItem = File Name Data | Folder Name [FSItem] deriving (Show)
+data FSCrumb = FSCrumb Name [FSItem] [FSItem] deriving (Show)
+type FSZipper = (FSItem, [FSCrumb])
 
-updateSizes' :: [String] -> Map.Map String String -> Map.Map String Int -> Map.Map String Int
-updateSizes' [] parents sizes = sizes
-updateSizes' children parents sizes | trace (show children) False = undefined
-updateSizes' children parents sizes = updateSizes' (nub $ map fst listToAddParents) parents (mergeSizes listToAddParents sizes)
-  where
-    sizesOfChildren = mapMaybe (\x -> (,) x <$> Map.lookup x sizes) children
-    listToAddParents = mapMaybe (\(child, size) -> (,) <$> Map.lookup child parents <*> pure size) sizesOfChildren
-    mergeSizes [] sizes = sizes
-    mergeSizes ((n, s) : xs) sizes = mergeSizes xs (Map.insertWith (+) n s sizes)
+fsUp :: FSZipper -> FSZipper
+fsUp (item, []) = (item, [])
+fsUp (item, FSCrumb name ls rs:bs) = (Folder name (ls ++ [item] ++ rs), bs)
 
-updateSizes :: (Map.Map String String, Map.Map String Int) -> Map.Map String Int
-updateSizes (parents, sizes) = updateSizes' (Map.keys (Map.filter (> 0) sizes)) parents sizes
+fsTo :: Name -> FSZipper -> FSZipper
+fsTo name (Folder folderName items, bs) =
+    let (ls, item:rs) = break (nameIs name) items
+    in  (item, FSCrumb folderName ls rs:bs)
 
-constructFileSystem commands = (parents, updateSizes (parents, sizes), folders)
-  where
-    (parents, sizes) = createParentsAndSizes "/" commands (Map.empty, Map.empty)
-    folders = Map.keys . Map.filter (== 0) $ sizes
+nameIs :: Name -> FSItem -> Bool
+nameIs name (Folder folderName _) = name == folderName
+nameIs name (File fileName _) = name == fileName
 
-part1 contents = sum . filter (< 100000) . mapMaybe (`Map.lookup` sizes) $ folders
-  where
-    (parents, sizes, folders) = constructFileSystem (lines contents)
+fsChildFolder :: Name -> FSItem -> FSItem
+fsChildFolder name (Folder folderName folderItems) = Folder folderName (Folder name [] : folderItems)
 
+fsChildFile :: String -> FSItem -> FSItem
+fsChildFile str (Folder folderName folderItems) = Folder folderName (File name size : folderItems)
+  where (sizeStr, nameStr) = break (==' ') str
+        name = nameStr
+        size = read sizeStr :: Int
+
+parse :: [String] -> FSZipper -> FSZipper
+parse [] zipper = zipper
+parse ("$ cd /":operations) _ = parse operations (Folder "/" [], [])
+parse ("$ ls": operations) zipper = parse operations zipper
+parse ("$ cd .." : operations) zipper = parse operations (fsUp zipper)
+parse (('$' : ' ' : 'c' : 'd' : ' ' : folder) : operations) zipper = parse operations (fsTo folder zipper)
+parse (('d' : 'i' : 'r' : ' ' : folder) : operations) (currentFolder, crumbs) = parse operations (fsChildFolder folder currentFolder, crumbs)
+parse (fileInfo : operations) (currentFolder, crumbs) = parse operations (fsChildFile fileInfo currentFolder, crumbs)
+
+getSize :: FSItem -> (Int, [Int])
+getSize (Folder name children) = (fr, srr)
+  where (fr, sr) = foldr ((\(sacc, lacc) (s, l) -> (sacc+s, l++lacc )) . getSize) (0, []) children
+        isSizeEnough = fr < 100000
+        srr = if isSizeEnough then fr:sr else sr
+getSize (File name size) = (size, [])
+
+tree = do
+  contents <- readFile "input.txt"
+  let ls = lines contents
+  let tree = fst $ fsUp . fsUp . fsUp $ parse ls (undefined,[])
+  return tree
+
+part1 :: FSItem -> Int
+part1 tree = sum . snd $ getSize tree
 main = do
   contents <- readFile "input.txt"
-  print (part1 contents)
+  let ls = lines contents
+  let tree = fst $ fsUp . fsUp . fsUp $ parse ls (undefined,[])
+  print $ "part1: " ++ show (part1 tree)
